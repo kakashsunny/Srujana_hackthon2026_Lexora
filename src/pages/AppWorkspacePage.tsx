@@ -10,6 +10,7 @@ import { ResponseWorkspace } from '../components/response/ResponseWorkspace';
 import { ProfessionalReview } from '../components/professional/ProfessionalReview';
 import { DocumentsVault } from '../components/documents/DocumentsVault';
 import { QuickUploadModal } from '../components/shared/QuickUploadModal';
+import { WorkspaceSettingsModal } from '../components/workspace/WorkspaceSettingsModal';
 import { INITIAL_NOTICES } from '../data/mockNotices';
 import { Notice } from '../types';
 import { Menu } from 'lucide-react';
@@ -23,6 +24,7 @@ export const AppWorkspacePage: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [uploadModalOpen, setUploadModalOpen] = useState<boolean>(false);
+  const [workspaceSettingsOpen, setWorkspaceSettingsOpen] = useState<boolean>(false);
   const [globalSearch, setGlobalSearch] = useState<string>('');
 
   const selectedNotice = notices.find(n => n.id === selectedNoticeId) || notices[0];
@@ -57,6 +59,15 @@ export const AppWorkspacePage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleDeleteNotice = (id: string) => {
+    const remaining = notices.filter(n => n.id !== id);
+    setNotices(remaining);
+    if (remaining.length > 0) {
+      setSelectedNoticeId(remaining[0].id);
+    }
+    setCurrentTab('overview');
+  };
+
   return (
     <div className="min-h-screen bg-[#F7F6F2] text-[#171A1F] flex relative selection:bg-[#172C4D] selection:text-white">
       {/* Subtle Warm Ivory Architectural Background Layer — strictly behind content */}
@@ -76,6 +87,7 @@ export const AppWorkspacePage: React.FC = () => {
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         urgentCount={notices.filter(n => n.priority === 'urgent' || n.authenticity.outcome === 'suspicious').length}
         onNavigateToLanding={() => navigate('/')}
+        onOpenWorkspaceSettings={() => setWorkspaceSettingsOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -92,6 +104,7 @@ export const AppWorkspacePage: React.FC = () => {
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           onToggleMobile={() => setMobileMenuOpen(true)}
           onNavigateToLanding={() => navigate('/')}
+          onOpenWorkspaceSettings={() => setWorkspaceSettingsOpen(true)}
         />
 
         {/* Mobile Header Bar trigger */}
@@ -142,6 +155,7 @@ export const AppWorkspacePage: React.FC = () => {
               onNavigateToLab={() => setCurrentTab('authenticity')}
               onNavigateToProfessional={() => setCurrentTab('professional')}
               onToggleActionItem={handleToggleActionItem}
+              onDeleteNotice={handleDeleteNotice}
             />
           )}
 
@@ -174,6 +188,13 @@ export const AppWorkspacePage: React.FC = () => {
             />
           )}
         </main>
+
+        {/* Visible Statutory Decision Support Footer */}
+        <footer className="mt-auto py-3.5 px-6 border-t border-[#E7E5DF] bg-white/90 backdrop-blur-xs text-center text-xs text-[#69717D]">
+          <p className="max-w-4xl mx-auto leading-relaxed">
+            <span className="font-semibold text-[#172C4D]">Legal Disclaimer:</span> Lexora is decision support, not legal advice. Verify notices on official portals and consult a CA or advocate.
+          </p>
+        </footer>
       </div>
 
       {/* Quick Upload / Analyze Notice Modal */}
@@ -182,6 +203,12 @@ export const AppWorkspacePage: React.FC = () => {
         onClose={() => setUploadModalOpen(false)}
         sampleNotices={notices}
         onSelectNoticeAndAnalyze={handleUploadAndAnalyze}
+      />
+
+      {/* Workspace & Udyam Management Modal (RBAC & Team Access) */}
+      <WorkspaceSettingsModal
+        isOpen={workspaceSettingsOpen}
+        onClose={() => setWorkspaceSettingsOpen(false)}
       />
     </div>
   );

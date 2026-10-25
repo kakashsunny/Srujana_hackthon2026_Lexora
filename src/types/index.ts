@@ -2,6 +2,18 @@ export type AuthorityType = 'gst' | 'income_tax' | 'labour' | 'legal_court' | 'c
 
 export type AuthenticityOutcome = 'no_red_flags' | 'suspicious' | 'unable_to_verify';
 
+export function getAuthenticityLabel(outcome: AuthenticityOutcome): 'Appears Genuine' | 'Suspicious' | 'Requires Direct Verification' {
+  switch (outcome) {
+    case 'suspicious':
+      return 'Suspicious';
+    case 'unable_to_verify':
+      return 'Requires Direct Verification';
+    case 'no_red_flags':
+    default:
+      return 'Appears Genuine';
+  }
+}
+
 export type PriorityLevel = 'urgent' | 'high' | 'medium' | 'low';
 
 export type NoticeStatus = 'received' | 'analyzed' | 'in_review' | 'response_drafted' | 'submitted' | 'resolved';
@@ -153,8 +165,12 @@ export interface Notice {
   professionalReason: string;
   consultationQuestions: string[];
   
-  // Authenticity
+  // Authenticity & Risk
   authenticity: AuthenticityAssessment;
+  
+  // Multilingual Intelligence
+  detectedLanguage?: DetectedLanguageInfo;
+  translations?: Partial<Record<SupportedLanguage, NoticeTranslation>>;
   
   // Mock Document Artifacts
   documentPages: string[];

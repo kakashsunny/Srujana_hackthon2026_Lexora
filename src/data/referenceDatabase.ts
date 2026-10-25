@@ -61,5 +61,17 @@ export const OFFICIAL_AUTHORITIES_CATALOG: Record<string, AuthorityReferenceCata
     standardPaymentChannels: ['Delhi High Court e-Court Fee portal (shcilestockholding.com / delhihighcourt.nic.in)'],
     knownImpersonationDomains: ['delhicourt-legalnotice.in', 'court-summons-india.com'],
     helpline: '011-43010101'
+  },
+  karnataka_commercial_taxes: {
+    canonicalName: 'Commercial Taxes Department, Government of Karnataka',
+    aliases: ['Karnataka Commercial Taxes', 'KGST Department', 'LGSTO Bangalore', 'Commissioner of Commercial Taxes Karnataka'],
+    officialDomains: ['karnataka.gov.in', 'kar.nic.in', 'gst.kar.nic.in'],
+    portalUrl: 'https://karnatakastategst.kar.nic.in',
+    dinVerificationUrl: 'https://gst.kar.nic.in/din-search',
+    dinFormatRegex: /^(20[2-3][0-9])([0-1][0-9])([0-3][0-9])([A-Z0-9]{12,14})$/,
+    dinFormatDescription: 'Karnataka State GST 20-digit alphanumeric DIN',
+    standardPaymentChannels: ['GST PMT-06 State Tax challan via gst.gov.in / Khajane-II treasury'],
+    knownImpersonationDomains: ['karnataka-tax-clearance.org', 'bangalore-gst-settlement.in'],
+    helpline: '080-22340500'
   }
 };

@@ -1,27 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   ShieldCheck, 
   ShieldAlert, 
   AlertTriangle, 
   CheckCircle, 
-  XCircle, 
   ChevronDown, 
   ChevronUp, 
   ExternalLink, 
-  Upload, 
   Mail, 
-  FileText, 
   Info, 
   RefreshCw, 
   ArrowRight,
-  Search,
   ScanLine,
-  Lock,
   Layers,
-  Sparkles
+  Scale,
+  CreditCard,
+  UserCheck,
+  FileSearch,
+  BadgeAlert
 } from 'lucide-react';
-import { Notice, EvidenceFinding, ReferenceMatch, AuthenticityAssessment } from '../../types';
-import { runForensicAudit, calculateSimilarityPercentage } from '../../services/forensicEngine';
+import { Notice, EvidenceFinding, EvidenceProvenance } from '../../types';
 
 interface AuthenticityLabProps {
   selectedNotice: Notice;
@@ -39,18 +37,18 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
   const [isAuditing, setIsAuditing] = useState<boolean>(false);
   const [auditStep, setAuditStep] = useState<number>(5); // 0 to 5 (5 = completed)
   const [expandedCardId, setExpandedCardId] = useState<string | null>('F-PAY-UPI');
+  const [activePillarTab, setActivePillarTab] = useState<'all' | 'sender' | 'identifier' | 'payment' | 'consistency'>('all');
   const [emailForwardModal, setEmailForwardModal] = useState<boolean>(false);
   const [copiedEmail, setCopiedEmail] = useState<boolean>(false);
 
   const auditSteps = [
-    'Parsing Document Header & Dispatched Mail Headers...',
-    'Validating Document Identification Number (DIN) & Checksums...',
-    'Mining Institutional Reference Data via Multi-Signal Fuzzy Matching...',
-    'Cross-Referencing Statutory Timelines & Consistency Invariants...',
-    'Scanning for Coercive Threat Language & Unauthorized Payment QR/UPI...'
+    'Parsing Document Header, Origin Routing & Mail Envelope...',
+    'Validating Document Identification Number (DIN) Checksums & CBIC/CBDT Rules...',
+    'Mining Institutional Reference Data via Levenshtein Distance & Token Jaccard...',
+    'Analyzing Statutory Timelines, Natural Justice & Invariant Consistency...',
+    'Scanning for Coercive Language Patterns & Unauthorized Private Payment Channels...'
   ];
 
-  // Trigger simulated live audit animation when switching notices or clicking Re-audit
   const runLiveAudit = () => {
     setIsAuditing(true);
     setAuditStep(0);
@@ -69,12 +67,54 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
   const assessment = selectedNotice.authenticity;
   const isSuspicious = assessment.outcome === 'suspicious';
   const isUnableToVerify = assessment.outcome === 'unable_to_verify';
-  const isNoRedFlags = assessment.outcome === 'no_red_flags';
+  const riskScore = assessment.riskScore ?? (isSuspicious ? 88 : isUnableToVerify ? 42 : 12);
+  const riskBreakdown = assessment.riskBreakdown ?? {
+    senderScore: isSuspicious ? 95 : 10,
+    identifierScore: isSuspicious ? 88 : 10,
+    paymentScore: isSuspicious ? 98 : 5,
+    consistencyScore: isSuspicious ? 70 : 15,
+    coercionScore: isSuspicious ? 90 : 10,
+    compositeRiskScore: riskScore
+  };
+
+  // Helper for rendering provenance badges
+  const renderProvenanceBadge = (provenance?: EvidenceProvenance) => {
+    switch (provenance) {
+      case 'verified_fact':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-[#EBF5EE] text-[#1E7E34] border border-[#C3E6CB]">
+            <CheckCircle className="w-3 h-3" />
+            <span>VERIFIED FACT</span>
+          </span>
+        );
+      case 'ai_finding':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-[#EEF2FF] text-[#3730A3] border border-[#C7D2FE]">
+            <ScanLine className="w-3 h-3" />
+            <span>AI FORENSIC FINDING</span>
+          </span>
+        );
+      case 'unverified':
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-[#F1F3F5] text-[#495057] border border-[#DEE2E6]">
+            <Info className="w-3 h-3" />
+            <span>UNVERIFIED DOCUMENT ASSERTION</span>
+          </span>
+        );
+    }
+  };
+
+  // Filter findings by active pillar
+  const filteredFindings = assessment.findings.filter((f) => {
+    if (activePillarTab === 'all') return true;
+    return f.category === activePillarTab;
+  });
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-6 pb-16">
       {/* 1. Header & Intake Section */}
-      <div className="relative rounded-xl border border-[#E7E5DF] overflow-hidden bg-white p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="relative rounded-xl border border-[#E7E5DF] overflow-hidden bg-white p-5 lg:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Ambient Investigation Workspace Backdrop */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <img
@@ -89,13 +129,13 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
         <div className="relative z-10 max-w-xl">
           <div className="flex items-center gap-2 text-xs font-semibold text-[#B99A62] uppercase tracking-wider">
             <span className="w-1.5 h-1.5 rounded-full bg-[#B99A62]" />
-            <span>Forensic Document Investigation</span>
+            <span>Forensic Document Investigation &amp; Verification</span>
           </div>
           <h1 className="text-2xl font-bold text-[#171A1F] mt-1 tracking-tight">
             Authenticity Lab
           </h1>
           <p className="text-xs text-[#69717D] mt-0.5 max-w-2xl leading-relaxed">
-            Examine the document, investigate its source, and understand the evidence behind the assessment.
+            Multi-signal audit engine powered by verified government reference catalogs, DIN checksum validation, Levenshtein fuzzy analysis, and anomaly detection.
           </p>
         </div>
 
@@ -106,6 +146,15 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
             <span className="px-2 text-[11px] font-semibold text-[#69717D]">Preset:</span>
             {allNotices.map((n) => {
               const isCurrent = n.id === selectedNotice.id;
+              const label = n.id === 'notice-gst-scam-01'
+                ? 'Suspicious GST'
+                : n.id === 'notice-it-scrutiny-02'
+                ? 'IT Scrutiny'
+                : n.id === 'notice-epfo-inquiry-03'
+                ? 'EPFO Labour'
+                : n.id === 'notice-karnataka-commercial-tax-05'
+                ? 'Karnataka GST (Bilingual)'
+                : 'NI 138 Court';
               return (
                 <button
                   key={n.id}
@@ -118,7 +167,7 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
                     ${isCurrent ? 'bg-[#172C4D] text-[#F7F6F2]' : 'text-[#48505E] hover:text-[#171A1F] hover:bg-[#F7F6F2]'}
                   `}
                 >
-                  {n.category === 'gst' ? 'Suspicious GST' : n.category === 'income_tax' ? 'IT Scrutiny' : n.category === 'labour' ? 'EPFO Labour' : 'NI 138 Court'}
+                  {label}
                 </button>
               );
             })}
@@ -145,7 +194,7 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
         </div>
       </div>
 
-      {/* 2. Simulated Audit Progress Modal / Banner */}
+      {/* 2. Simulated Audit Progress Banner */}
       {isAuditing && (
         <div className="bg-[#172C4D] text-[#F7F6F2] p-4 rounded-lg shadow-md border border-[#B99A62]/30 space-y-3 animate-fade-in">
           <div className="flex items-center justify-between text-xs">
@@ -172,76 +221,215 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
         </div>
       )}
 
-      {/* 3. Large Central Assessment Panel */}
-      <div className={`rounded-xl border p-6 lg:p-8 shadow-xs ${
-        isSuspicious
-          ? 'bg-[#FEF2F2] border-[#FECACA]'
-          : isUnableToVerify
-          ? 'bg-[#FFFBEB] border-[#FDE68A]'
-          : 'bg-[#F0FDF4] border-[#BBF7D0]'
-      }`}>
+      {/* 3. Statutory Non-Definitive Evidentiary Rule Disclaimer */}
+      <div className="p-3.5 rounded-lg border border-[#D0C9B6] bg-[#FAF8F3] text-xs text-[#5D5545] flex items-start gap-3 shadow-2xs">
+        <Scale className="w-4 h-4 text-[#B99A62] shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <div className="font-semibold text-[#171A1F] flex items-center gap-2">
+            <span>Statutory Non-Definitive Evidentiary Rule</span>
+            <span className="px-1.5 py-0.2 rounded text-[10px] bg-[#EBE7DC] text-[#7A6A4E] font-medium">Standard of Inquiry</span>
+          </div>
+          <p className="text-[11px] leading-relaxed text-[#5D5545]">
+            {assessment.statutoryDisclaimer ||
+              'Lexora provides explainable forensic anomaly detection and pattern matching based on verified government reference standards. It does not declare documents definitively fraudulent or authentic without physical document inspection, official court discovery, or direct government registry confirmation. All findings must be reviewed by qualified legal or tax counsel.'}
+          </p>
+        </div>
+      </div>
+
+      {/* 4. Explainable Multi-Signal Risk Score & Gauge Panel */}
+      <div className="bg-white rounded-xl border border-[#E7E5DF] p-6 shadow-xs space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#E7E5DF]">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              {isSuspicious ? (
+          {/* Risk Level Badge & Summary */}
+          <div className="space-y-2 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              {riskScore >= 60 ? (
                 <div className="flex items-center gap-2 px-3 py-1 bg-[#B91C1C] text-white rounded-md text-xs font-bold tracking-wide">
                   <ShieldAlert className="w-4 h-4" />
-                  <span>SUSPICIOUS INDICATORS DETECTED</span>
+                  <span>Suspicious</span>
                 </div>
-              ) : isUnableToVerify ? (
+              ) : riskScore >= 30 ? (
                 <div className="flex items-center gap-2 px-3 py-1 bg-[#B45309] text-white rounded-md text-xs font-bold tracking-wide">
                   <AlertTriangle className="w-4 h-4" />
-                  <span>UNABLE TO VERIFY</span>
+                  <span>Requires Direct Verification</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 px-3 py-1 bg-[#15803D] text-white rounded-md text-xs font-bold tracking-wide">
                   <ShieldCheck className="w-4 h-4" />
-                  <span>NO MAJOR RED FLAGS DETECTED</span>
+                  <span>Appears Genuine</span>
                 </div>
               )}
 
               <span className="text-xs text-[#69717D]">
-                (Notice Ref: <span className="font-mono text-[#171A1F]">{selectedNotice.referenceNumber}</span>)
+                Ref: <span className="font-mono text-[#171A1F] font-semibold">{selectedNotice.referenceNumber}</span>
               </span>
+              {selectedNotice.din && (
+                <span className="text-xs text-[#69717D]">
+                  · DIN: <span className="font-mono text-[#171A1F] font-semibold">{selectedNotice.din}</span>
+                </span>
+              )}
             </div>
 
-            <h2 className="text-xl font-bold text-[#171A1F]">
-              {isSuspicious
-                ? 'Multiple high-risk anomalies detected. Proceed with independent official verification.'
-                : isUnableToVerify
-                ? 'Insufficient corroborating signals to establish authenticity. Verification required.'
-                : 'Notice conforms to standard structural formats. Preliminary check passed.'}
+            <h2 className="text-lg font-bold text-[#171A1F]">
+              {riskScore >= 60
+                ? 'Document displays critical markers of tax impersonation or procedural anomaly.'
+                : riskScore >= 30
+                ? 'Document lacks public cryptographic verification; registry checks recommended.'
+                : 'Sender, statutory citations, and payment procedures align with verified government standards.'}
             </h2>
 
-            <p className="text-xs text-[#48505E] max-w-3xl leading-relaxed">
-              {isSuspicious
-                ? 'This document contains private settlement payment instructions and an unverified Document Identification Number (DIN). Legitimate government taxes are never payable via private UPI addresses or unsolicited QR codes.'
-                : isUnableToVerify
-                ? 'External public registries for this authority do not support public unauthenticated DIN queries. Proceed to the designated portal directly.'
-                : 'No sender domain spoofing or unauthorized payment channels detected. Note: This preliminary assessment does not guarantee genuineness or replace statutory portal lookup.'}
+            <p className="text-xs text-[#48505E] max-w-2xl leading-relaxed">
+              {riskScore >= 60
+                ? 'Notice demands payment outside official RBI/GST PMT-06 challan infrastructure or exhibits malformed DIN checksums. Do not disburse funds or share banking credentials.'
+                : riskScore >= 30
+                ? 'External public verification portals require departmental login credentials to confirm active service of this notice.'
+                : 'Notice matches known institutional identifiers and does not request private transfers. Statutory response window applies.'}
             </p>
           </div>
 
-          {/* Evidence Coverage & Confidence Box */}
-          <div className="bg-white p-4 rounded-lg border border-[#E7E5DF] shadow-xs shrink-0 w-full sm:w-64 space-y-2 text-xs">
-            <div className="flex items-center justify-between text-[#69717D]">
-              <span className="font-medium">Evidence Coverage</span>
-              <span className="font-mono font-bold text-[#171A1F]">{assessment.confidenceScore}%</span>
+          {/* Explainable Composite Risk Score Gauge */}
+          <div className="bg-[#FAF8F5] p-5 rounded-xl border border-[#E7E5DF] shrink-0 w-full sm:w-72 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-[#172C4D] uppercase tracking-wider">Composite Risk Score</span>
+              <span className={`text-2xl font-black font-mono ${
+                riskScore >= 60 ? 'text-[#B91C1C]' : riskScore >= 30 ? 'text-[#B45309]' : 'text-[#15803D]'
+              }`}>
+                {riskScore} / 100
+              </span>
             </div>
-            <div className="w-full bg-[#E7E5DF] h-1.5 rounded-full overflow-hidden">
-              <div 
-                className="bg-[#172C4D] h-full"
-                style={{ width: `${assessment.confidenceScore}%` }}
-              />
+
+            {/* Risk Gauge Bar */}
+            <div className="space-y-1">
+              <div className="w-full bg-[#E7E5DF] h-2.5 rounded-full overflow-hidden flex">
+                <div 
+                  className={`h-full transition-all duration-500 ${
+                    riskScore >= 60 ? 'bg-[#B91C1C]' : riskScore >= 30 ? 'bg-[#B45309]' : 'bg-[#15803D]'
+                  }`}
+                  style={{ width: `${riskScore}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[10px] text-[#868E96] font-mono">
+                <span>0 (Conforming)</span>
+                <span>50 (Caution)</span>
+                <span>100 (Suspicious)</span>
+              </div>
             </div>
-            <div className="text-[10px] text-[#69717D] leading-tight">
-              Evidence coverage represents verification depth across 6 invariant dimensions, not probability of genuineness.
+
+            <div className="text-[11px] text-[#69717D] pt-1 border-t border-[#E7E5DF] flex items-center justify-between">
+              <span>Coverage Depth:</span>
+              <span className="font-bold text-[#171A1F] font-mono">{assessment.confidenceScore}%</span>
             </div>
           </div>
         </div>
 
+        {/* 5 Risk Pillars Interactive Breakdown */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold text-[#171A1F] uppercase tracking-wider">
+              5 Forensic Signal Pillars
+            </h3>
+            <span className="text-[11px] text-[#69717D]">
+              Select a pillar to view targeted findings
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {/* 1. Sender */}
+            <button
+              onClick={() => setActivePillarTab(activePillarTab === 'sender' ? 'all' : 'sender')}
+              className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
+                activePillarTab === 'sender' ? 'border-[#172C4D] bg-[#172C4D]/5 ring-1 ring-[#172C4D]' : 'border-[#E7E5DF] bg-white hover:bg-[#F7F6F2]'
+              }`}
+            >
+              <div className="flex items-center justify-between text-xs mb-1">
+                <UserCheck className="w-4 h-4 text-[#172C4D]" />
+                <span className={`font-mono text-xs font-bold ${
+                  riskBreakdown.senderScore >= 60 ? 'text-[#B91C1C]' : 'text-[#15803D]'
+                }`}>
+                  {riskBreakdown.senderScore}%
+                </span>
+              </div>
+              <div className="text-xs font-semibold text-[#171A1F]">Sender Domain</div>
+              <div className="text-[10px] text-[#69717D] truncate mt-0.5">SPF / Mail Server</div>
+            </button>
+
+            {/* 2. Identifier */}
+            <button
+              onClick={() => setActivePillarTab(activePillarTab === 'identifier' ? 'all' : 'identifier')}
+              className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
+                activePillarTab === 'identifier' ? 'border-[#172C4D] bg-[#172C4D]/5 ring-1 ring-[#172C4D]' : 'border-[#E7E5DF] bg-white hover:bg-[#F7F6F2]'
+              }`}
+            >
+              <div className="flex items-center justify-between text-xs mb-1">
+                <FileSearch className="w-4 h-4 text-[#172C4D]" />
+                <span className={`font-mono text-xs font-bold ${
+                  riskBreakdown.identifierScore >= 60 ? 'text-[#B91C1C]' : 'text-[#15803D]'
+                }`}>
+                  {riskBreakdown.identifierScore}%
+                </span>
+              </div>
+              <div className="text-xs font-semibold text-[#171A1F]">DIN Checksum</div>
+              <div className="text-[10px] text-[#69717D] truncate mt-0.5">Structure &amp; Validity</div>
+            </button>
+
+            {/* 3. Payment */}
+            <button
+              onClick={() => setActivePillarTab(activePillarTab === 'payment' ? 'all' : 'payment')}
+              className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
+                activePillarTab === 'payment' ? 'border-[#172C4D] bg-[#172C4D]/5 ring-1 ring-[#172C4D]' : 'border-[#E7E5DF] bg-white hover:bg-[#F7F6F2]'
+              }`}
+            >
+              <div className="flex items-center justify-between text-xs mb-1">
+                <CreditCard className="w-4 h-4 text-[#172C4D]" />
+                <span className={`font-mono text-xs font-bold ${
+                  riskBreakdown.paymentScore >= 60 ? 'text-[#B91C1C]' : 'text-[#15803D]'
+                }`}>
+                  {riskBreakdown.paymentScore}%
+                </span>
+              </div>
+              <div className="text-xs font-semibold text-[#171A1F]">Payment Vector</div>
+              <div className="text-[10px] text-[#69717D] truncate mt-0.5">UPI / QR Detection</div>
+            </button>
+
+            {/* 4. Consistency */}
+            <button
+              onClick={() => setActivePillarTab(activePillarTab === 'consistency' ? 'all' : 'consistency')}
+              className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
+                activePillarTab === 'consistency' ? 'border-[#172C4D] bg-[#172C4D]/5 ring-1 ring-[#172C4D]' : 'border-[#E7E5DF] bg-white hover:bg-[#F7F6F2]'
+              }`}
+            >
+              <div className="flex items-center justify-between text-xs mb-1">
+                <Scale className="w-4 h-4 text-[#172C4D]" />
+                <span className={`font-mono text-xs font-bold ${
+                  riskBreakdown.consistencyScore >= 60 ? 'text-[#B91C1C]' : 'text-[#15803D]'
+                }`}>
+                  {riskBreakdown.consistencyScore}%
+                </span>
+              </div>
+              <div className="text-xs font-semibold text-[#171A1F]">Statute Invariant</div>
+              <div className="text-[10px] text-[#69717D] truncate mt-0.5">Sections &amp; Circulars</div>
+            </button>
+
+            {/* 5. Coercion */}
+            <button
+              onClick={() => setActivePillarTab(activePillarTab === 'all' ? 'all' : 'all')}
+              className="p-3 rounded-lg border border-[#E7E5DF] bg-white hover:bg-[#F7F6F2] text-left transition-all cursor-pointer"
+            >
+              <div className="flex items-center justify-between text-xs mb-1">
+                <BadgeAlert className="w-4 h-4 text-[#172C4D]" />
+                <span className={`font-mono text-xs font-bold ${
+                  riskBreakdown.coercionScore >= 60 ? 'text-[#B91C1C]' : 'text-[#15803D]'
+                }`}>
+                  {riskBreakdown.coercionScore}%
+                </span>
+              </div>
+              <div className="text-xs font-semibold text-[#171A1F]">Due Process</div>
+              <div className="text-[10px] text-[#69717D] truncate mt-0.5">Threat Pressure Scan</div>
+            </button>
+          </div>
+        </div>
+
         {/* Checks Completed & Limitations Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-5 text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 text-xs border-t border-[#E7E5DF]">
           <div>
             <div className="font-bold text-[#171A1F] flex items-center gap-1.5 mb-2">
               <CheckCircle className="w-3.5 h-3.5 text-[#15803D]" />
@@ -260,7 +448,7 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
           <div>
             <div className="font-bold text-[#171A1F] flex items-center gap-1.5 mb-2">
               <Info className="w-3.5 h-3.5 text-[#B45309]" />
-              <span>Important Limitations &amp; Unchecked Checks</span>
+              <span>Important Limitations &amp; Exclusions</span>
             </div>
             <ul className="space-y-1.5 text-[#69717D]">
               {assessment.limitations.map((lim, i) => (
@@ -274,19 +462,30 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
         </div>
       </div>
 
-      {/* 4. Forensic Evidence Panels */}
+      {/* 5. Forensic Evidence Panels with Provenance Tags */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-[#171A1F]">
-            Detailed Evidence Findings ({assessment.findings.length})
-          </h3>
-          <span className="text-xs text-[#69717D]">
-            Click any finding to inspect extracted excerpts and statutory rationale
-          </span>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h3 className="text-base font-bold text-[#171A1F]">
+              Detailed Evidence Findings ({filteredFindings.length})
+            </h3>
+            <p className="text-xs text-[#69717D]">
+              Each finding clearly displays its evidentiary provenance (Verified Statutory Fact vs AI Inferred Finding vs Document Assertion).
+            </p>
+          </div>
+
+          {activePillarTab !== 'all' && (
+            <button
+              onClick={() => setActivePillarTab('all')}
+              className="text-xs text-[#B99A62] hover:underline font-semibold"
+            >
+              Clear Filter (Show All)
+            </button>
+          )}
         </div>
 
         <div className="space-y-3">
-          {assessment.findings.map((f) => {
+          {filteredFindings.map((f: EvidenceFinding) => {
             const isExpanded = expandedCardId === f.id;
             const isCrit = f.severity === 'critical';
             const isCaut = f.severity === 'caution';
@@ -304,11 +503,11 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="shrink-0">
                       {isCrit ? (
-                        <div className="w-7 h-7 rounded-md bg-[#FEF2F2] text-[#B91C1C] flex items-center justify-center font-bold">
+                        <div className="w-7 h-7 rounded-md bg-[#FEF2F2] text-[#B91C1C] flex items-center justify-center font-bold text-xs">
                           !
                         </div>
                       ) : isCaut ? (
-                        <div className="w-7 h-7 rounded-md bg-[#FFFBEB] text-[#B45309] flex items-center justify-center font-bold">
+                        <div className="w-7 h-7 rounded-md bg-[#FFFBEB] text-[#B45309] flex items-center justify-center font-bold text-xs">
                           ?
                         </div>
                       ) : (
@@ -319,10 +518,10 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
                     </div>
 
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2 text-[11px] text-[#69717D] mb-0.5">
+                      <div className="flex items-center gap-2 text-[11px] text-[#69717D] mb-1 flex-wrap">
                         <span className="uppercase font-semibold text-[#172C4D]">{f.category}</span>
                         <span>·</span>
-                        <span>Severity: {f.severity.toUpperCase()}</span>
+                        {renderProvenanceBadge(f.provenance)}
                       </div>
                       <div className="text-xs font-bold text-[#171A1F] truncate">
                         {f.title}
@@ -332,7 +531,7 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
 
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="text-[11px] text-[#69717D] hidden sm:inline">
-                      {f.verifiedThroughOfficialChannel ? 'Verified against directory' : 'Unverified / Discrepancy'}
+                      {f.verifiedThroughOfficialChannel ? 'Verified Against Statute/Registry' : 'Discrepancy Flagged'}
                     </span>
                     {isExpanded ? (
                       <ChevronUp className="w-4 h-4 text-[#69717D]" />
@@ -344,15 +543,16 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
 
                 {/* Expanded Card Content */}
                 {isExpanded && (
-                  <div className="px-5 pb-5 pt-1 border-t border-[#E7E5DF] text-xs space-y-3 bg-[#F7F6F2]">
+                  <div className="px-5 pb-5 pt-1 border-t border-[#E7E5DF] text-xs space-y-3 bg-[#FAF8F5]">
                     <p className="text-[#48505E] leading-relaxed">
                       {f.description}
                     </p>
 
                     {f.excerpt && (
                       <div className="p-3 bg-white border border-[#E7E5DF] rounded-md font-mono text-[11px] text-[#171A1F]">
-                        <div className="text-[10px] text-[#69717D] uppercase font-sans mb-1 font-semibold">
-                          Extracted Text Excerpt
+                        <div className="text-[10px] text-[#69717D] uppercase font-sans mb-1 font-semibold flex items-center justify-between">
+                          <span>Extracted Notice Snippet</span>
+                          <span className="text-[10px] font-mono text-[#868E96]">OCR Layer</span>
                         </div>
                         {f.excerpt}
                       </div>
@@ -370,7 +570,7 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
 
                       <div className="p-3 bg-white rounded-md border border-[#E7E5DF]">
                         <div className="text-[10px] text-[#69717D] uppercase font-semibold mb-1">
-                          Recommended Action
+                          Recommended Verification Action
                         </div>
                         <p className="text-[#172C4D] font-medium text-[11px] leading-relaxed">
                           {f.recommendedAction}
@@ -385,7 +585,7 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
         </div>
       </div>
 
-      {/* 5. Fuzzy Matching & Data Mining Demonstration */}
+      {/* 6. Fuzzy Matching & Data Mining Demonstration */}
       <div className="bg-white rounded-xl border border-[#E7E5DF] p-6 shadow-xs space-y-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-[#172C4D] uppercase tracking-wide">
@@ -397,7 +597,7 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
           </h3>
           <p className="text-xs text-[#69717D] leading-relaxed">
             Extracted attributes are normalized and compared against official institutional profiles using Levenshtein distance and token n-grams.
-            <strong className="text-[#171A1F]"> Note: Similarity does not equal authenticity</strong>—fraudulent documents often copy legitimate templates with minor alterations.
+            <strong className="text-[#171A1F]"> Similarity does not equal authenticity</strong>—fraudulent documents often copy legitimate templates with minor altered routing.
           </p>
         </div>
 
@@ -441,16 +641,16 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
         )}
       </div>
 
-      {/* 6. Assessment Summary & Action Buttons */}
+      {/* 7. Assessment Summary & Action Buttons */}
       <div className="p-6 bg-[#172C4D] text-[#F7F6F2] rounded-xl shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
           <div className="text-xs text-[#B99A62] font-semibold uppercase tracking-wider">
-            Recommended Action Pathway
+            Recommended Next Step
           </div>
           <div className="text-sm font-bold mt-0.5">
             {isSuspicious
-              ? 'Verify DIN directly on the official CBIC portal before making any contact'
-              : 'Proceed to Notice Analysis to review plain-language breakdown and deadlines'}
+              ? 'Verify DIN directly on the official portal before making any contact or payment'
+              : 'Proceed to Notice Analysis to review plain-language translation and response actions'}
           </div>
         </div>
 
@@ -475,7 +675,7 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
         </div>
       </div>
 
-      {/* 7. Email Forwarding Workflow Modal */}
+      {/* 8. Email Forwarding Workflow Modal */}
       {emailForwardModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl border border-[#E7E5DF] max-w-md w-full p-6 shadow-2xl space-y-4">
@@ -514,7 +714,7 @@ export const AuthenticityLab: React.FC<AuthenticityLabProps> = ({
             </div>
 
             <div className="text-[11px] text-[#69717D] space-y-1">
-              <div>✓ Documents are parsed through DIN &amp; Red-Flag engine within 12 seconds.</div>
+              <div>✓ Documents are parsed through DIN &amp; structural anomaly checks upon ingestion.</div>
               <div>✓ Urgent deadline alerts are synchronized with your registered director phone.</div>
             </div>
 

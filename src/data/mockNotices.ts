@@ -1,7 +1,8 @@
 import { Notice } from '../types';
 import { runForensicAudit } from '../services/forensicEngine';
+import { detectDocumentLanguage } from '../services/multilingualEngine';
 
-export const INITIAL_NOTICES: Notice[] = [
+const RAW_NOTICES: Notice[] = [
   {
     id: 'notice-gst-scam-01',
     title: 'Show Cause Notice under Section 73 (Alleged ITC Mismatch)',
@@ -652,8 +653,167 @@ Yours faithfully,
 (Sanjay Sharma, Advocate)
 Enrolment No: D/1498/2011`,
     documentType: 'letter'
+  },
+  {
+    id: 'notice-karnataka-commercial-tax-05',
+    title: 'ಕರ್ನಾಟಕ ಸರಕಾರ - ವಾಣಿಜ್ಯ ತೆರಿಗೆಗಳ ಇಲಾಖೆ / Karnataka State GST Demand SCN',
+    referenceNumber: 'KGST/LGSTO-085/SCN-73/2026/4109',
+    din: '20261019085002914109',
+    category: 'gst',
+    issuingAuthority: {
+      name: 'Assistant Commissioner of Commercial Taxes, LGSTO-085, Gandhinagar, Bengaluru',
+      department: 'Commercial Taxes Department, Government of Karnataka',
+      officialDomain: 'karnataka.gov.in',
+      portalUrl: 'https://karnatakastategst.kar.nic.in',
+      helpline: '080-22340500',
+      dinVerificationUrl: 'https://gst.kar.nic.in/din-search',
+      standardReferenceFormat: 'Karnataka State GST 20-digit DIN'
+    },
+    senderEmail: 'acct.lgsto085@karnataka.gov.in',
+    recipientName: 'Apex Precision Tools Private Limited (Bengaluru Unit)',
+    recipientGstinOrPan: '29AABCU9603R1ZK',
+    dateIssued: '2026-10-19',
+    dateReceived: '2026-10-21',
+    responseDeadline: '2026-11-20',
+    isDeadlineInferred: false,
+    deadlineCalculationBasis: 'Statutory 30-day window under Section 73(8) of the Karnataka Goods and Services Tax Act, 2017',
+    priority: 'medium',
+    status: 'analyzed',
+    demandAmountInr: 185400,
+    plainSummary: 'Bilingual Show Cause Notice issued by Karnataka State GST department regarding reconciliation variance between GSTR-3B and GSTR-2B for FY 2024-25 totaling ₹1,85,400 with statutory interest.',
+    kannadaSummary: '2024-25 ನೇ ಸಾಲಿನ GSTR-3B ಮತ್ತು GSTR-2B ನಡುವಿನ ₹1,85,400 ರಷ್ಟು ಇನ್‌ಪುಟ್ ಟ್ಯಾಕ್ಸ್ ಕ್ರೆಡಿಟ್ ವ್ಯತ್ಯಾಸದ ಕುರಿತು ಕರ್ನಾಟಕ ವಾಣಿಜ್ಯ ತೆರಿಗೆ ಇಲಾಖೆಯು ನೀಡಿರುವ ಅಧಿಕೃತ ದ್ವಿಭಾಷಾ ಕಾರಣ ಕೇಳಿ ನೋಟಿಸ್.',
+    whyReceived: 'Supplier invoice reported under B2B in GSTR-1 does not reflect corresponding payment tax deposition according to state jurisdictional audit.',
+    actionItems: [
+      {
+        id: 'kn-act-1',
+        text: 'Verify supplier tax payment status on GST portal via DRC-03 or GSTR-1 filing status.',
+        deadlineOffsetDays: 3,
+        completed: true,
+        roleHint: 'Tax Accountant'
+      },
+      {
+        id: 'kn-act-2',
+        text: 'Submit written representation in Form GST DRC-06 electronically via Karnataka State GST portal.',
+        deadlineOffsetDays: 14,
+        completed: false,
+        roleHint: 'Chartered Accountant'
+      },
+      {
+        id: 'kn-act-3',
+        text: 'Request virtual personal hearing if supplier verification requires reconciliation buffer.',
+        deadlineOffsetDays: 20,
+        completed: false,
+        roleHint: 'Legal Counsel'
+      }
+    ],
+    legalCitations: [
+      {
+        act: 'Karnataka Goods and Services Tax Act, 2017',
+        section: 'Section 73(1)',
+        ruleOrSubSection: 'Rule 142(1)',
+        plainMeaning: 'Determination of tax not paid or short paid under State GST provisions.',
+        extractedSnippet: 'ಕಾನೂನು ನೋಟಿಸ್ / SHOW CAUSE NOTICE UNDER SECTION 73(1) OF KGST ACT, 2017',
+        isStatutoryRequirement: true
+      },
+      {
+        act: 'Karnataka Goods and Services Tax Act, 2017',
+        section: 'Section 50',
+        plainMeaning: 'Mandatory interest on delayed tax payment at 18% per annum.',
+        extractedSnippet: 'ಈ ಮೊತ್ತವನ್ನು ಕಡ್ಡಾಯ ಬಡ್ಡಿ (Section 50) ಸಹಿತ 30 ದಿನಗಳ ಒಳಗಾಗಿ ಸರಕಾರಿ ಖಜಾನೆಗೆ Form GST DRC-03 ಮೂಲಕ ಜಮೆ ಮಾಡತಕ್ಕದ್ದು.',
+        isStatutoryRequirement: true
+      }
+    ],
+    requiredDocuments: [
+      {
+        id: 'kndoc-1',
+        name: 'GSTR-2B vs 3B Variance Statement for FY 24-25',
+        description: 'Monthly breakdown of local supplier invoices.',
+        isMandatory: true,
+        isCollected: true
+      },
+      {
+        id: 'kndoc-2',
+        name: 'Tax Invoice copy from M/s Peenya Precision Alloys (GSTIN: 29AABCP1029F1Z0)',
+        description: 'Invoice verifying tax charged and physical receipt of metal components.',
+        isMandatory: true,
+        isCollected: true
+      }
+    ],
+    recommendedProfessional: 'Chartered Accountant (Tax)',
+    professionalReason: 'State GST reconciliation notice issued by Karnataka Commercial Taxes requires filing Form GST DRC-06 online with invoice annexures.',
+    consultationQuestions: [
+      'Has the Peenya supplier uploaded the invoice in their quarterly GSTR-1 return?',
+      'Can we claim input credit under the extended period if the supplier deposits tax now?'
+    ],
+    authenticity: runForensicAudit(
+      `ಕರ್ನಾಟಕ ಸರಕಾರ - ವಾಣಿಜ್ಯ ತೆರಿಗೆಗಳ ಇಲಾಖೆ
+GOVERNMENT OF KARNATAKA - COMMERCIAL TAXES DEPARTMENT
+ಕಚೇರಿ: ಸ್ಥಳೀಯ ಸರಕು ಮತ್ತು ಸೇವಾ ತೆರಿಗೆ ಅಧಿಕಾರಿ, ಎಲ್‌ಜಿಎಸ್‌ಟಿಒ-085, ಗಾಂಧಿನಗರ, ಬೆಂಗಳೂರು - 560009
+OFFICE OF THE ASSISTANT COMMISSIONER OF COMMERCIAL TAXES, LGSTO-085, BENGALURU
+
+ಕಾನೂನು ನೋಟಿಸ್ / SHOW CAUSE NOTICE UNDER SECTION 73(1) OF KGST ACT, 2017
+DIN: 20261019085002914109
+ಸಂಖ್ಯೆ / Ref: KGST/LGSTO-085/SCN-73/2026/4109
+ದಿನಾಂಕ / Date: 19-10-2026
+
+ಸ್ವೀಕೃತಿದಾರರು / To:
+ಮೆ/ಸ ಅಪೆಕ್ಸ್ ಪ್ರಿಸಿಶನ್ ಟೂಲ್ಸ್ ಪ್ರೈವೇಟ್ ಲಿಮಿಟೆಡ್ / M/s Apex Precision Tools Pvt Ltd
+GSTIN: 29AABCU9603R1ZK
+ಪೀಣ್ಯ ಇಂಡಸ್ಟ್ರಿಯಲ್ ಏರಿಯಾ, ಬೆಂಗಳೂರು - 560058
+
+ವಿಷಯ: 2024-25 ನೇ ಸಾಲಿನ ಇನ್‌ಪುಟ್ ಟ್ಯಾಕ್ಸ್ ಕ್ರೆಡಿಟ್ (ITC) ವ್ಯತ್ಯಾಸದ ಕುರಿತು ವಿವರಣೆ ಮತ್ತು ವಸೂಲಾತಿ ನೋಟಿಸ್.
+SUBJECT: DETERMINATION OF TAX SHORT PAID UNDER SECTION 73(1) - FY 2024-25
+
+1. 2024-25 ನೇ ಆರ್ಥಿಕ ವರ್ಷದಲ್ಲಿ ನೀವು ಸಲ್ಲಿಸಿರುವ GSTR-3B ವಿವರಣೆ ಮತ್ತು ಸಪ್ಲೈಯರ್‌ಗಳು ನಮೂದಿಸಿರುವ GSTR-2B ತಾಳೆಯಾಗದೆ ₹1,85,400 ರಷ್ಟು ಹೆಚ್ಚುವರಿ ITC ಪಡೆದಿರುವುದು ತನಿಖೆಯಲ್ಲಿ ಕಂಡುಬಂದಿದೆ.
+2. ಈ ಮೊತ್ತವನ್ನು ಕಡ್ಡಾಯ ಬಡ್ಡಿ (Section 50) ಸಹಿತ 30 ದಿನಗಳ ಒಳಗಾಗಿ ಸರಕಾರಿ ಖಜಾನೆಗೆ Form GST DRC-03 ಮೂಲಕ ಜಮೆ ಮಾಡತಕ್ಕದ್ದು.
+3. ನಿಗದಿತ ದಿನಾಂಕ 20-11-2026 ರೊಳಗೆ ಸಮರ್ಥನೀಯ ದಾಖಲೆಗಳೊಂದಿಗೆ ಲಿಖಿತ ವಿವರಣೆ ನೀಡಲು ಅಥವಾ ವೈಯಕ್ತಿಕ ವಿಚಾರಣೆಗೆ ಹಾಜರಾಗಲು ಕೋರಲಾಗಿದೆ.
+
+ಸಹಾಯಕ ಆಯುಕ್ತರು / Assistant Commissioner of Commercial Taxes
+LGSTO-085, Gandhinagar, Bengaluru
+Email: acct.lgsto085@karnataka.gov.in`,
+      {
+        authorityKey: 'karnataka_commercial_taxes',
+        senderEmail: 'acct.lgsto085@karnataka.gov.in',
+        din: '20261019085002914109',
+        referenceNumber: 'KGST/LGSTO-085/SCN-73/2026/4109'
+      }
+    ),
+    documentPages: [
+      'Page 1: Karnataka State Government Seal, Bilingual Header (Kannada & English), DIN, Section 73(1) Notice, DRC-03 Payment Instructions.'
+    ],
+    extractedOcrText: `ಕರ್ನಾಟಕ ಸರಕಾರ - ವಾಣಿಜ್ಯ ತೆರಿಗೆಗಳ ಇಲಾಖೆ
+GOVERNMENT OF KARNATAKA - COMMERCIAL TAXES DEPARTMENT
+ಕಚೇರಿ: ಸ್ಥಳೀಯ ಸರಕು ಮತ್ತು ಸೇವಾ ತೆರಿಗೆ ಅಧಿಕಾರಿ, ಎಲ್‌ಜಿಎಸ್‌ಟಿಒ-085, ಗಾಂಧಿನಗರ, ಬೆಂಗಳೂರು - 560009
+OFFICE OF THE ASSISTANT COMMISSIONER OF COMMERCIAL TAXES, LGSTO-085, BENGALURU
+
+ಕಾನೂನು ನೋಟಿಸ್ / SHOW CAUSE NOTICE UNDER SECTION 73(1) OF KGST ACT, 2017
+DIN: 20261019085002914109
+ಸಂಖ್ಯೆ / Ref: KGST/LGSTO-085/SCN-73/2026/4109
+ದಿನಾಂಕ / Date: 19-10-2026
+
+ಸ್ವೀಕೃತಿದಾರರು / To:
+ಮೆ/ಸ ಅಪೆಕ್ಸ್ ಪ್ರಿಸಿಶನ್ ಟೂಲ್ಸ್ ಪ್ರೈವೇಟ್ ಲಿಮಿಟೆಡ್ / M/s Apex Precision Tools Pvt Ltd
+GSTIN: 29AABCU9603R1ZK
+ಪೀಣ್ಯ ಇಂಡಸ್ಟ್ರಿಯಲ್ ಏರಿಯಾ, ಬೆಂಗಳೂರು - 560058
+
+ವಿಷಯ: 2024-25 ನೇ ಸಾಲಿನ ಇನ್‌ಪುಟ್ ಟ್ಯಾಕ್ಸ್ ಕ್ರೆಡಿಟ್ (ITC) ವ್ಯತ್ಯಾಸದ ಕುರಿತು ವಿವರಣೆ ಮತ್ತು ವಸೂಲಾತಿ ನೋಟಿಸ್.
+SUBJECT: DETERMINATION OF TAX SHORT PAID UNDER SECTION 73(1) - FY 2024-25
+
+1. 2024-25 ನೇ ಆರ್ಥಿಕ ವರ್ಷದಲ್ಲಿ ನೀವು ಸಲ್ಲಿಸಿರುವ GSTR-3B ವಿವರಣೆ ಮತ್ತು ಸಪ್ಲೈಯರ್‌ಗಳು ನಮೂದಿಸಿರುವ GSTR-2B ತಾಳೆಯಾಗದೆ ₹1,85,400 ರಷ್ಟು ಹೆಚ್ಚುವರಿ ITC ಪಡೆದಿರುವುದು ತನಿಖೆಯಲ್ಲಿ ಕಂಡುಬಂದಿದೆ.
+2. ಈ ಮೊತ್ತವನ್ನು ಕಡ್ಡಾಯ ಬಡ್ಡಿ (Section 50) ಸಹಿತ 30 ದಿನಗಳ ಒಳಗಾಗಿ ಸರಕಾರಿ ಖಜಾನೆಗೆ Form GST DRC-03 ಮೂಲಕ ಜಮೆ ಮಾಡತಕ್ಕದ್ದು.
+3. ನಿಗದಿತ ದಿನಾಂಕ 20-11-2026 ರೊಳಗೆ ಸಮರ್ಥನೀಯ ದಾಖಲೆಗಳೊಂದಿಗೆ ಲಿಖಿತ ವಿವರಣೆ ನೀಡಲು ಅಥವಾ ವೈಯಕ್ತಿಕ ವಿಚಾರಣೆಗೆ ಹಾಜರಾಗಲು ಕೋರಲಾಗಿದೆ.
+
+ಸಹಾಯಕ ಆಯುಕ್ತರು / Assistant Commissioner of Commercial Taxes
+LGSTO-085, Gandhinagar, Bengaluru
+Email: acct.lgsto085@karnataka.gov.in`,
+    documentType: 'pdf'
   }
 ];
+
+export const INITIAL_NOTICES: Notice[] = RAW_NOTICES.map((n) => ({
+  ...n,
+  detectedLanguage: detectDocumentLanguage(n.extractedOcrText)
+}));
 
 export const MOCK_PROFESSIONALS = [
   {

@@ -1,6 +1,23 @@
 import React, { useState } from 'react';
-import { Search, Bell, ShieldAlert, Clock, ChevronRight, X, ExternalLink, PanelLeftClose, PanelLeftOpen, Menu } from 'lucide-react';
+import { 
+  Search, 
+  Bell, 
+  ShieldAlert, 
+  Clock, 
+  ChevronRight, 
+  X, 
+  ExternalLink, 
+  PanelLeftClose, 
+  PanelLeftOpen, 
+  Menu,
+  ChevronDown,
+  UserCheck,
+  Building2,
+  Lock
+} from 'lucide-react';
 import { Notice } from '../../types';
+import { useAuth, SEEDED_USERS } from '../../context/AuthContext';
+import { UserRole } from '../../types/auth';
 
 interface HeaderProps {
   currentView: string;
@@ -13,6 +30,7 @@ interface HeaderProps {
   onToggleCollapse: () => void;
   onToggleMobile: () => void;
   onNavigateToLanding?: () => void;
+  onOpenWorkspaceSettings?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -25,10 +43,14 @@ export const Header: React.FC<HeaderProps> = ({
   sidebarCollapsed,
   onToggleCollapse,
   onToggleMobile,
-  onNavigateToLanding
+  onNavigateToLanding,
+  onOpenWorkspaceSettings
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
+
+  const { currentUser, currentRole, switchRole, businessProfile } = useAuth();
 
   const urgentCount = notices.filter(n => n.priority === 'urgent' || n.authenticity.outcome === 'suspicious').length;
   
@@ -67,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
             <Menu className="w-4 h-4" />
           </button>
 
-          {/* Desktop Toggle Bar button - only shown when sidebar is collapsed so there is never a duplicate collapse button */}
+          {/* Desktop Toggle Bar button */}
           {sidebarCollapsed && (
             <button
               onClick={onToggleCollapse}
@@ -86,7 +108,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Zone 2: Global Search Bar */}
-        <div className="relative flex-1 max-w-md mx-2">
+        <div className="relative flex-1 max-w-md mx-2 hidden md:block">
           <div className="relative flex items-center">
             <Search className="w-4 h-4 text-[#69717D] absolute left-3 pointer-events-none" />
             <input
@@ -150,14 +172,14 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Zone 3: Actions & Profile */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
           {/* Analyze Quick CTA */}
           <button
             onClick={onOpenAnalyzeModal}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-[#172C4D] text-[#F7F6F2] hover:bg-[#112038] text-xs font-medium rounded-md shadow-xs transition-colors whitespace-nowrap cursor-pointer"
           >
             <span className="text-sm font-semibold">+</span>
-            <span>Analyze a Notice</span>
+            <span>Analyze Notice</span>
           </button>
 
           {/* Notifications Dropdown Toggle */}
@@ -166,6 +188,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setShowNotifications(!showNotifications)}
               className="relative p-1.5 text-[#69717D] hover:text-[#172C4D] rounded-md hover:bg-black/5 transition-colors cursor-pointer"
               aria-label="Notification center"
+              title="Urgent notice deadlines & alerts"
             >
               <Bell className="w-4 h-4" />
               {urgentCount > 0 && (
@@ -210,16 +233,91 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* User Profile / Business Pill */}
-          <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-[#E7E5DF]">
-            <div className="w-7 h-7 rounded-full bg-[#172C4D] text-[#F7F6F2] font-semibold text-[11px] flex items-center justify-center border border-[#B99A62]/40">
-              AP
+          {/* DEMO ROLE SWITCHER (Step 3 RBAC) */}
+          <div className="relative">
+            <button
+              onClick={() => setShowRoleDropdown(!showRoleDropdown)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs font-semibold transition-all cursor-pointer ${
+                currentRole === 'owner'
+                  ? 'bg-[#FEF3C7] border-[#FDE68A] text-[#92400E] hover:bg-[#FDE68A]'
+                  : currentRole === 'advisor'
+                  ? 'bg-[#E0F2FE] border-[#BAE6FD] text-[#0369A1] hover:bg-[#BAE6FD]'
+                  : 'bg-[#F1F5F9] border-[#E2E8F0] text-[#334155] hover:bg-[#E2E8F0]'
+              }`}
+              title="Click to switch demo role (Owner / Staff / CA)"
+            >
+              <UserCheck className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Demo Role:</span>
+              <span className="uppercase font-mono">{currentRole}</span>
+              <ChevronDown className="w-3 h-3 opacity-75" />
+            </button>
+
+            {/* Role Switcher Popover */}
+            {showRoleDropdown && (
+              <div className="absolute right-0 mt-2 w-72 bg-white border border-[#E7E5DF] rounded-xl shadow-xl py-2 z-50 text-xs animate-in fade-in-50">
+                <div className="px-3 py-1.5 border-b border-[#E7E5DF]">
+                  <div className="font-bold text-[#171A1F]">Simulate User Role (Demo Mode)</div>
+                  <div className="text-[10px] text-[#69717D] mt-0.5 leading-snug">
+                    Udyam login on the official portal is owner-only (Aadhaar OTP). Lexora roles are separate and managed by the owner.
+                  </div>
+                </div>
+
+                <div className="p-1 space-y-1">
+                  {(['owner', 'staff', 'advisor'] as UserRole[]).map((role) => {
+                    const u = SEEDED_USERS[role];
+                    const isSelected = currentRole === role;
+                    return (
+                      <button
+                        key={role}
+                        onClick={() => {
+                          switchRole(role);
+                          setShowRoleDropdown(false);
+                        }}
+                        className={`w-full text-left p-2 rounded-lg transition-colors flex items-start gap-2.5 cursor-pointer ${
+                          isSelected ? 'bg-[#F7F6F2] font-semibold text-[#172C4D]' : 'hover:bg-[#F7F6F2] text-[#48505E]'
+                        }`}
+                      >
+                        <div className="w-7 h-7 rounded-full bg-[#172C4D] text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+                          {u.avatarInitials}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-[#171A1F] truncate">{u.name}</span>
+                            <span className="text-[9px] font-mono uppercase bg-gray-100 px-1 py-0.2 rounded font-bold">
+                              {role}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-[#69717D] truncate">{u.roleTitle}</div>
+                          <div className="text-[9px] text-[#8F97A3] mt-0.5">
+                            {role === 'owner' ? '✓ Can delete data, edit Udyam & billing' : '✕ Read/review only; deletion restricted'}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Business & Udyam Management Pill */}
+          <button
+            onClick={onOpenWorkspaceSettings}
+            className="hidden sm:flex items-center gap-2 pl-2 border-l border-[#E7E5DF] hover:opacity-80 transition-opacity cursor-pointer text-left"
+            title="Manage Workspace, Udyam Registration & Team Collaborators"
+          >
+            <div className="w-7 h-7 rounded-full bg-[#172C4D] text-[#F7F6F2] font-semibold text-[11px] flex items-center justify-center border border-[#B99A62]/40 shrink-0">
+              {currentUser.avatarInitials}
             </div>
             <div className="flex flex-col text-left">
-              <span className="text-xs font-semibold text-[#171A1F] leading-tight">Apex Precision</span>
-              <span className="text-[10px] text-[#69717D]">GSTIN: 07AAACA...</span>
+              <span className="text-xs font-semibold text-[#171A1F] leading-tight truncate max-w-[120px]">
+                {businessProfile.companyName.split(' ')[0]} {businessProfile.companyName.split(' ')[1]}
+              </span>
+              <span className="text-[10px] font-mono text-[#69717D] truncate max-w-[120px]">
+                {businessProfile.udyamNumber || businessProfile.gstin.slice(0, 10)}
+              </span>
             </div>
-          </div>
+          </button>
         </div>
       </div>
     </header>

@@ -37,7 +37,13 @@ REFERENCE: ${currentNotice.referenceNumber} ${currentNotice.din ? `| DIN: ${curr
 ISSUING AUTHORITY: ${currentNotice.issuingAuthority.name}
 CLIENT: ${currentNotice.recipientName} (GSTIN/PAN: ${currentNotice.recipientGstinOrPan})
 RESPONSE DEADLINE: ${currentNotice.responseDeadline}
-AUTHENTICITY STATUS: ${currentNotice.authenticity.outcome.toUpperCase()}
+AUTHENTICITY STATUS: ${
+  currentNotice.authenticity.outcome === 'suspicious'
+    ? 'Suspicious'
+    : currentNotice.authenticity.outcome === 'unable_to_verify'
+    ? 'Requires Direct Verification'
+    : 'Appears Genuine'
+}
 
 RECOMMENDED SPECIALIST: ${currentNotice.recommendedProfessional}
 RATIONALE: ${currentNotice.professionalReason}

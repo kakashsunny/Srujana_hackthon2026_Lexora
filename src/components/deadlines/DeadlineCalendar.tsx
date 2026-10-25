@@ -13,6 +13,15 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { Notice } from '../../types';
+import { 
+  downloadIcsCalendar, 
+  requestAndSendBrowserNotification, 
+  getSavedReminders, 
+  saveReminder, 
+  deleteReminder, 
+  CalendarReminderConfig 
+} from '../../services/calendarNotifications';
+import { Download, BellRing, Trash2, CalendarPlus } from 'lucide-react';
 
 interface DeadlineCalendarProps {
   notices: Notice[];
@@ -26,6 +35,8 @@ export const DeadlineCalendar: React.FC<DeadlineCalendarProps> = ({
   const [viewMode, setViewMode] = useState<'timeline' | 'calendar'>('timeline');
   const [reminderModalNotice, setReminderModalNotice] = useState<Notice | null>(null);
   const [reminderSavedToast, setReminderSavedToast] = useState<string | null>(null);
+  const [savedReminders, setSavedReminders] = useState<CalendarReminderConfig[]>(getSavedReminders());
+  const [selectedOffset, setSelectedOffset] = useState<number>(3);
 
   // Month navigation state (October/November 2026)
   const [currentMonth, setCurrentMonth] = useState<string>('October 2026');
@@ -39,10 +50,42 @@ export const DeadlineCalendar: React.FC<DeadlineCalendarProps> = ({
     return notices.filter(n => n.responseDeadline === dateStr);
   };
 
-  const handleSaveReminder = (notice: Notice, daysBefore: number) => {
+  const handleSaveReminder = async (notice: Notice, daysBefore: number) => {
+    const config: CalendarReminderConfig = {
+      noticeId: notice.id,
+      noticeTitle: notice.title,
+      referenceNumber: notice.referenceNumber,
+      deadlineDate: notice.responseDeadline,
+      reminderDaysBefore: daysBefore,
+      channel: 'browser_notification',
+      createdAt: new Date().toISOString()
+    };
+    saveReminder(config);
+    setSavedReminders(getSavedReminders());
+    setReminderSavedToast(`Reminder scheduled: ${daysBefore} days before ${notice.responseDeadline}`);
+
+    // Try requesting browser notification permission & test alert
+    const granted = await requestAndSendBrowserNotification(
+      `Lexora Deadline Alert: ${notice.referenceNumber}`,
+      `Statutory reply due on ${notice.responseDeadline} (${daysBefore} days alert set).`
+    );
+    if (granted) {
+      setReminderSavedToast(`Browser & in-app reminder set for ${daysBefore} days before ${notice.responseDeadline}`);
+    }
+
+    setTimeout(() => setReminderSavedToast(null), 4000);
     setReminderModalNotice(null);
-    setReminderSavedToast(`Reminder set: Director SMS & Email alert ${daysBefore} days before ${notice.responseDeadline}`);
+  };
+
+  const handleDownloadIcs = (notice: Notice) => {
+    downloadIcsCalendar(notice, selectedOffset);
+    setReminderSavedToast(`Downloaded .ics calendar file for ${notice.referenceNumber}`);
     setTimeout(() => setReminderSavedToast(null), 3000);
+  };
+
+  const handleDeleteReminder = (noticeId: string, daysBefore: number) => {
+    deleteReminder(noticeId, daysBefore);
+    setSavedReminders(getSavedReminders());
   };
 
   return (
@@ -92,12 +135,41 @@ export const DeadlineCalendar: React.FC<DeadlineCalendarProps> = ({
       )}
 
       {/* Statutory Rules Notice Banner */}
-      <div className="p-4 bg-white rounded-lg border border-[#E7E5DF] shadow-xs flex items-start gap-3 text-xs">
-        <Info className="w-4 h-4 text-[#B99A62] shrink-0 mt-0.5" />
-        <div className="text-[#48505E] leading-relaxed">
-          <strong className="text-[#171A1F]">Business-Day Rule &amp; General Clauses Act (Sec 10):</strong> If the last day of a statutory notice period falls on a Sunday or gazetted public holiday (e.g. Diwali / Bank Holiday), the period automatically extends to the next working business day. Inferred deadlines must be confirmed against portal service dates.
+      <div className="p-4 bg-white rounded-lg border border-[#E7E5DF] shadow-xs space-y-2 text-xs">
+        <div className="flex items-start gap-3">
+          <Info className="w-4 h-4 text-[#B99A62] shrink-0 mt-0.5" />
+          <div className="text-[#48505E] leading-relaxed">
+            <strong className="text-[#171A1F]">Business-Day Rule &amp; General Clauses Act (Sec 10):</strong> If the last day of a statutory notice period falls on a Sunday or gazetted public holiday (e.g. Diwali / Bank Holiday), the period automatically extends to the next working business day. Inferred deadlines must be confirmed against portal service dates.
+          </div>
+        </div>
+        <div className="pt-2 border-t border-[#E7E5DF]/60 text-[#48505E] leading-relaxed pl-7">
+          <strong className="text-[#171A1F]">Negotiable Instruments Act (Sec 138 Demand Window):</strong> The 15 days following receipt is the statutory window to pay the demanded cheque amount. Non-payment within 15 days gives the payee the statutory right to institute a criminal complaint before the Judicial Magistrate within 30 days thereafter (it is not an immediate ex-parte recovery decree).
         </div>
       </div>
+
+      {/* Active Scheduled Reminders Badge Bar */}
+      {savedReminders.length > 0 && (
+        <div className="p-3 bg-[#EEF2F6] rounded-lg border border-[#172C4D]/20 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-[#172C4D]">
+            <BellRing className="w-4 h-4 text-[#B99A62]" />
+            <span className="font-semibold">{savedReminders.length} Scheduled Statutory Alerts Active</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {savedReminders.slice(0, 3).map((r, idx) => (
+              <span key={idx} className="bg-white px-2.5 py-1 rounded border border-[#E7E5DF] text-[11px] font-mono text-[#171A1F] flex items-center gap-1.5">
+                <span>{r.referenceNumber.slice(0, 12)}... ({r.reminderDaysBefore}d before)</span>
+                <button
+                  onClick={() => handleDeleteReminder(r.noticeId, r.reminderDaysBefore)}
+                  className="text-[#B91C1C] hover:opacity-75"
+                  title="Remove reminder"
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* VIEW 1: MILESTONE TIMELINE */}
       {viewMode === 'timeline' && (
@@ -128,7 +200,7 @@ export const DeadlineCalendar: React.FC<DeadlineCalendarProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex items-center gap-2 sm:gap-3 shrink-0 flex-wrap sm:flex-nowrap">
                       <div className="text-right">
                         <div className="text-[10px] text-[#69717D] uppercase font-semibold">Response Deadline</div>
                         <div className="font-mono font-bold text-sm text-[#B91C1C] tabular-nums">
@@ -139,10 +211,20 @@ export const DeadlineCalendar: React.FC<DeadlineCalendarProps> = ({
                         </div>
                       </div>
 
+                      {/* Download .ics Button */}
+                      <button
+                        onClick={() => handleDownloadIcs(notice)}
+                        className="p-2 border border-[#E7E5DF] hover:bg-[#F7F6F2] rounded-md text-[#69717D] hover:text-[#172C4D] transition-colors"
+                        title="Download .ics Calendar File (Google / Apple / Outlook)"
+                      >
+                        <CalendarPlus className="w-4 h-4" />
+                      </button>
+
+                      {/* Reminder Modal Trigger */}
                       <button
                         onClick={() => setReminderModalNotice(notice)}
                         className="p-2 border border-[#E7E5DF] hover:bg-[#F7F6F2] rounded-md text-[#69717D] hover:text-[#172C4D] transition-colors"
-                        title="Set Reminder Alert"
+                        title="Set Browser & In-App Notification"
                       >
                         <Bell className="w-4 h-4" />
                       </button>
@@ -279,11 +361,11 @@ export const DeadlineCalendar: React.FC<DeadlineCalendarProps> = ({
       {/* Reminder Setting Modal */}
       {reminderModalNotice && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl border border-[#E7E5DF] max-w-sm w-full p-5 shadow-2xl space-y-4">
+          <div className="bg-white rounded-xl border border-[#E7E5DF] max-w-md w-full p-5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-[#E7E5DF] pb-2">
               <h3 className="text-sm font-bold text-[#171A1F] flex items-center gap-1.5">
                 <Bell className="w-4 h-4 text-[#B99A62]" />
-                <span>Configure Statutory Reminders</span>
+                <span>Calendar Sync &amp; Statutory Reminders</span>
               </h3>
               <button
                 onClick={() => setReminderModalNotice(null)}
@@ -294,30 +376,62 @@ export const DeadlineCalendar: React.FC<DeadlineCalendarProps> = ({
             </div>
 
             <div className="text-xs text-[#48505E] leading-relaxed">
-              Set automated notifications for <strong>{reminderModalNotice.title}</strong> before deadline on <strong>{reminderModalNotice.responseDeadline}</strong>:
+              Target Notice: <strong className="text-[#171A1F]">{reminderModalNotice.title}</strong>
+              <div className="font-mono text-[11px] text-[#B91C1C] mt-0.5">
+                Statutory Due Date: {reminderModalNotice.responseDeadline}
+              </div>
             </div>
 
+            {/* Option A: One-Click Calendar (.ics) Export */}
+            <div className="p-3 bg-[#F7F6F2] rounded-lg border border-[#E7E5DF] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#171A1F] flex items-center gap-1.5">
+                  <CalendarPlus className="w-3.5 h-3.5 text-[#172C4D]" />
+                  <span>Sync to Calendar App (.ics)</span>
+                </span>
+                <span className="text-[10px] text-[#69717D]">Google / Outlook / Apple</span>
+              </div>
+              <p className="text-[11px] text-[#48505E]">
+                Downloads an RFC-compliant calendar invite with pre-configured VALARM countdown alarms and official portal links.
+              </p>
+              <button
+                onClick={() => handleDownloadIcs(reminderModalNotice)}
+                className="w-full py-2 bg-[#172C4D] text-[#F7F6F2] hover:bg-[#112038] rounded-md text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download .ics Calendar Event</span>
+              </button>
+            </div>
+
+            {/* Option B: In-Browser Push Notifications */}
             <div className="space-y-2">
-              {[
-                { days: 7, label: '7 days before deadline (Prepare Reconciliation)' },
-                { days: 3, label: '3 days before deadline (CA Verification Brief)' },
-                { days: 1, label: '24 hours before (Final Portal Submission)' }
-              ].map(opt => (
-                <button
-                  key={opt.days}
-                  onClick={() => handleSaveReminder(reminderModalNotice, opt.days)}
-                  className="w-full text-left p-2.5 bg-[#F7F6F2] hover:bg-[#EBE8E0] rounded-md border border-[#E7E5DF] text-xs text-[#171A1F] font-medium transition-colors"
-                >
-                  ✓ {opt.label}
-                </button>
-              ))}
+              <div className="text-xs font-bold text-[#171A1F] flex items-center gap-1.5">
+                <BellRing className="w-3.5 h-3.5 text-[#B99A62]" />
+                <span>Schedule In-App / Browser Alert</span>
+              </div>
+              <div className="space-y-1.5">
+                {[
+                  { days: 7, label: '7 days before (Reconciliation & Document Gathering)' },
+                  { days: 3, label: '3 days before (CA Verification & Sign-off)' },
+                  { days: 1, label: '24 hours before (Final Portal Submission Window)' }
+                ].map(opt => (
+                  <button
+                    key={opt.days}
+                    onClick={() => handleSaveReminder(reminderModalNotice, opt.days)}
+                    className="w-full text-left p-2.5 bg-white hover:bg-[#F7F6F2] rounded-md border border-[#E7E5DF] text-xs text-[#171A1F] font-medium transition-colors flex items-center justify-between cursor-pointer group"
+                  >
+                    <span>✓ {opt.label}</span>
+                    <span className="text-[10px] text-[#B99A62] font-semibold group-hover:underline">Schedule Alert →</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <button
               onClick={() => setReminderModalNotice(null)}
-              className="w-full py-2 bg-gray-200 text-[#171A1F] text-xs font-semibold rounded-md hover:bg-gray-300"
+              className="w-full py-2 bg-gray-100 text-[#48505E] text-xs font-semibold rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
             >
-              Cancel
+              Close
             </button>
           </div>
         </div>

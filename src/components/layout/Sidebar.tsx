@@ -17,6 +17,7 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
+import { useAuth } from '../../context/AuthContext';
 
 export type NavigationTab = 
   | 'overview' 
@@ -37,6 +38,7 @@ interface SidebarProps {
   onToggleCollapse: () => void;
   urgentCount?: number;
   onNavigateToLanding?: () => void;
+  onOpenWorkspaceSettings?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -47,8 +49,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   collapsed,
   onToggleCollapse,
   urgentCount = 1,
-  onNavigateToLanding
+  onNavigateToLanding,
+  onOpenWorkspaceSettings
 }) => {
+  const { currentUser, businessProfile } = useAuth();
   const navItems = [
     {
       id: 'overview' as NavigationTab,
@@ -222,12 +226,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <HelpCircle className="w-4 h-4" />
               </button>
-              <div 
-                className="w-7 h-7 rounded-full bg-[#172C4D] text-[#F7F6F2] font-semibold text-[10px] flex items-center justify-center border border-[#B99A62]/40"
-                title="Apex Precision Tools"
+              <button
+                onClick={onOpenWorkspaceSettings}
+                className="w-7 h-7 rounded-full bg-[#172C4D] text-[#F7F6F2] font-semibold text-[10px] flex items-center justify-center border border-[#B99A62]/40 hover:opacity-80 transition-opacity cursor-pointer"
+                title={`Logged in as ${currentUser.name} (${currentUser.role})`}
               >
-                AP
-              </div>
+                {currentUser.avatarInitials}
+              </button>
             </div>
           ) : (
             <>
@@ -241,22 +246,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span>Guidance</span>
                 </button>
                 <button 
-                  onClick={() => alert('Settings: Compliance notifications, DIN verification webhooks, and team access are configured for Apex Precision Tools Pvt Ltd.')} 
+                  onClick={onOpenWorkspaceSettings} 
                   className="flex items-center gap-1.5 hover:text-[#172C4D] transition-colors py-1 cursor-pointer"
                 >
                   <Settings className="w-3.5 h-3.5" />
-                  <span>Settings</span>
+                  <span>Settings &amp; Udyam</span>
                 </button>
               </div>
 
               {/* Business & Plan Card */}
-              <div className="p-2.5 bg-[#F7F6F2] rounded-md border border-[#E7E5DF] text-xs">
+              <div 
+                onClick={onOpenWorkspaceSettings}
+                className="p-2.5 bg-[#F7F6F2] hover:bg-[#EBE8E0] transition-colors rounded-md border border-[#E7E5DF] text-xs cursor-pointer"
+                title="Click to view business profile and Udyam registration"
+              >
                 <div className="flex items-center justify-between font-semibold text-[#171A1F] text-[11px]">
-                  <span className="truncate">Apex Precision Tools</span>
-                  <span className="text-[10px] text-[#B99A62] font-mono uppercase bg-white px-1.5 py-0.2 rounded-xs border border-[#E7E5DF]">MSME Pro</span>
+                  <span className="truncate">{businessProfile.companyName}</span>
+                  <span className="text-[10px] text-[#B99A62] font-mono uppercase bg-white px-1.5 py-0.2 rounded-xs border border-[#E7E5DF]">{businessProfile.plan}</span>
                 </div>
-                <div className="text-[10px] text-[#69717D] mt-1 font-mono">
-                  DIN Auto-Scan: Active
+                <div className="text-[10px] text-[#69717D] mt-1 font-mono flex items-center justify-between">
+                  <span>{businessProfile.udyamNumber || businessProfile.gstin.slice(0, 10)}</span>
+                  <span className="text-[#172C4D] font-bold uppercase text-[9px] bg-white/70 px-1 rounded">{currentUser.role}</span>
                 </div>
               </div>
 

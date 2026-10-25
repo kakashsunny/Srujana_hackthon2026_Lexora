@@ -1,6 +1,6 @@
 {
-  "name": "Notice on the Desk",
-  "description": "Editorial legal notice intelligence, authenticity forensics, and deadline command center for Indian businesses.",
+  "name": "Lexora",
+  "description": "Lexora: Legal notice intelligence, authenticity forensics, and deadline command center for Indian businesses.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

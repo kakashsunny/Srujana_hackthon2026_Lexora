@@ -421,17 +421,17 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
                         {isSuspicious ? (
                           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#B91C1C]">
                             <ShieldAlert className="w-3.5 h-3.5" />
-                            <span>Suspicious Indicators</span>
+                            <span>Suspicious</span>
                           </span>
                         ) : isUnableToVerify ? (
                           <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#B45309]">
                             <AlertTriangle className="w-3.5 h-3.5" />
-                            <span>Unable to Verify</span>
+                            <span>Requires Direct Verification</span>
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#15803D]">
                             <ShieldCheck className="w-3.5 h-3.5" />
-                            <span>No Red Flags</span>
+                            <span>Appears Genuine</span>
                           </span>
                         )}
                       </td>

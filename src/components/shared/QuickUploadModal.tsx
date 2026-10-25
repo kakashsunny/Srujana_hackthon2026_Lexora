@@ -10,6 +10,8 @@ import {
   Sparkles
 } from 'lucide-react';
 import { Notice } from '../../types';
+import { runForensicAudit } from '../../services/forensicEngine';
+import { detectDocumentLanguage } from '../../services/multilingualEngine';
 
 interface QuickUploadModalProps {
   isOpen: boolean;
@@ -55,14 +57,22 @@ export const QuickUploadModal: React.FC<QuickUploadModalProps> = ({
     // Simulate OCR processing latency
     setTimeout(() => {
       setIsProcessing(false);
-      // Ingest as customized suspicious or tax notice
+      // Ingest as customized notice
       const templateNotice = sampleNotices[0]; // Suspicious GST preset
+      const customOcr = templateNotice.extractedOcrText;
       const customNotice: Notice = {
         ...templateNotice,
         id: `notice-uploaded-${Date.now()}`,
         title: `Uploaded Notice: ${file.name.replace(/\.[^/.]+$/, '')}`,
         referenceNumber: `CUSTOM/2026/${Math.floor(1000 + Math.random() * 9000)}`,
-        dateReceived: new Date().toISOString().split('T')[0]
+        dateReceived: new Date().toISOString().split('T')[0],
+        detectedLanguage: detectDocumentLanguage(customOcr),
+        authenticity: runForensicAudit(customOcr, {
+          authorityKey: 'cbic_gst',
+          senderEmail: templateNotice.senderEmail,
+          din: templateNotice.din,
+          referenceNumber: templateNotice.referenceNumber
+        })
       };
       onSelectNoticeAndAnalyze(customNotice);
       onClose();
@@ -151,9 +161,17 @@ export const QuickUploadModal: React.FC<QuickUploadModalProps> = ({
                   <div>
                     <div className="flex items-center justify-between gap-1 text-[10px] text-[#69717D] mb-1">
                       <span className="font-semibold uppercase text-[#172C4D]">{n.category}</span>
-                      {isSusp && (
+                      {isSusp ? (
                         <span className="text-[9px] font-semibold text-[#B91C1C] bg-[#FEF2F2] px-1.5 py-0.2 rounded-xs">
                           Suspicious
+                        </span>
+                      ) : n.authenticity.outcome === 'unable_to_verify' ? (
+                        <span className="text-[9px] font-semibold text-[#B45309] bg-[#FFFBEB] px-1.5 py-0.2 rounded-xs">
+                          Requires Direct Verification
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-semibold text-[#15803D] bg-[#F0FDF4] px-1.5 py-0.2 rounded-xs">
+                          Appears Genuine
                         </span>
                       )}
                     </div>

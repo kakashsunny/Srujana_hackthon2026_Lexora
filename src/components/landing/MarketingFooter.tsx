@@ -27,7 +27,7 @@ export const MarketingFooter: React.FC = () => {
             &copy; {new Date().getFullYear()} Lexora. Legal Intelligence &amp; Forensics. Built for India's small businesses.
           </p>
           <p className="max-w-xl text-[10px] text-[#8F97A3] leading-relaxed">
-            <strong>Legal Disclaimer:</strong> Lexora provides informational assistance and document analysis for business operations. It does not provide legal advice, conduct chartered accountant attestations, or create an attorney-client relationship. Always verify notices on official government verification portals.
+            <strong>Legal Disclaimer:</strong> Lexora is decision support, not legal advice. Verify notices on official portals and consult a CA or advocate.
           </p>
         </div>
       </div>

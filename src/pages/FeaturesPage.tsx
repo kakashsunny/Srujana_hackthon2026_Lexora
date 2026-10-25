@@ -42,23 +42,23 @@ export const FeaturesPage: React.FC = () => {
             <span>01 / Document Comprehension</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-[#171A1F] tracking-tight">
-            Plain-English translations &amp; dual Kannada localization
+            Multilingual Intelligence &amp; Automatic Script Detection
           </h2>
           <p className="text-xs sm:text-sm text-[#48505E] leading-relaxed">
-            Legal notices often deliberately obscure straightforward issues in circular clauses. We parse the document to reveal the underlying transactional dispute: whether an input credit was disputed, a supplier failed to file GSTR-1, or turnover differed between audited books and Form 26AS.
+            Legal notices often deliberately obscure straightforward issues in circular clauses or regional languages. We automatically detect document language (English, Hindi, Kannada, Tamil, Telugu, Marathi, Bengali, Gujarati) and generate plain-language explanations with an interactive Legal Terminology Simplifier—while strictly preserving original citations, DINs, amounts, and reference numbers.
           </p>
           <ul className="space-y-2 text-xs text-[#171A1F]">
             <li className="flex items-center gap-2">
               <Check className="w-4 h-4 text-[#15803D]" />
-              <span>Plain English summary + regional Kannada localization toggle</span>
+              <span>Auto-detects regional scripts (Kannada, Devanagari, Tamil, etc.) with confidence scoring</span>
             </li>
             <li className="flex items-center gap-2">
               <Check className="w-4 h-4 text-[#15803D]" />
-              <span>Explicit statutory sections extracted with plain-language definitions</span>
+              <span>Strict entity preservation: DINs, PAN/GSTINs, amounts, and dates are never altered</span>
             </li>
             <li className="flex items-center gap-2">
               <Check className="w-4 h-4 text-[#15803D]" />
-              <span>Clear explanation of why your specific company was targeted</span>
+              <span>Legal Terminology Simplifier breaks down ex-parte orders, show-cause notices, and ITC mismatches</span>
             </li>
           </ul>
         </div>
