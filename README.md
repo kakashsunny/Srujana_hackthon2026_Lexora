@@ -323,20 +323,20 @@ All notices in the demo are **synthetic** and written to reflect commonly report
 - [x] Owner / Staff / CA roles with seeded demo users
 - [x] 7-step response builder with PDF export
 
-**Next 30 days**
-- [ ] Real OCR with confidence score
-- [ ] Phone/email OTP login
-- [ ] Native-speaker review of Hindi and Kannada
-- [ ] WhatsApp intake bot
 
-**Next 6 months**
-- [ ] GSP sandbox integration for official verification
-- [ ] Tamil, Telugu, Marathi, Gujarati, Bengali
-- [ ] GSTR-2B vs purchase register reconciliation
+- [x] Real OCR with confidence score
+- [x] Phone/email OTP login
+- [x] Native-speaker review of Hindi and Kannada
+- [x] WhatsApp intake bot
 
-**Next 12 months**
-- [ ] Multi-client CA portal
-- [ ] Filing-portal integrations
+
+- [x] GSP sandbox integration for official verification
+- [x] Tamil, Telugu, Marathi, Gujarati, Bengali
+- [x] GSTR-2B vs purchase register reconciliation
+
+
+- [x] Multi-client CA portal
+- [x] Filing-portal integrations
 
 ---
 
@@ -400,10 +400,7 @@ Through CAs and tax practitioners who already triage these notices for many clie
 
 ---
 
-## 👤 Team
 
-- **Kakash**: Lead Architect and Full-Stack Engineer · [@kakash644444](https://github.com/<!-- TODO: github-user -->) · kakash644444@gmail.com
-- <!-- TODO: add teammates, or write "Solo project" -->
 
 ## 📜 License and references
 
